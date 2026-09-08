@@ -69,4 +69,3 @@ func (b *Builder) Build() Report {
 		TotalRequests:       b.total,
 	}
 }
-

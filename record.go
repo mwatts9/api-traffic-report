@@ -11,9 +11,9 @@ import (
 
 // Record is a validated, normalized log line.
 type Record struct {
-	RequestID string
-	ClientID  string
-	Endpoint  string
+	RequestID  string
+	ClientID   string
+	Endpoint   string
 	StatusCode int
 	// Timestamp is normalized to UTC, for internal comparison/sorting only.
 	Timestamp time.Time
