@@ -121,3 +121,39 @@ func TestLineReader_OversizedLineSpanningMultipleChunks(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestLineReader_OversizedLineRetainsOnlyAGenuinePrefix(t *testing.T) {
+	// Sized so the line spans several 64 KB ReadLine chunks and the *final*
+	// chunk is small enough that it would still "fit" under maxLineBytes on
+	// its own. A reader that keeps appending after the overflow is detected
+	// would splice that tail onto the head, returning bytes that are not a
+	// contiguous prefix of the line.
+	const chunk = 64 * 1024
+	const maxLineBytes = 70000
+	head := strings.Repeat("a", chunk*3)
+	tail := strings.Repeat("b", 3392)
+
+	lr := newLineReader(strings.NewReader(head+tail+"\n"+"short line"), maxLineBytes)
+
+	line, oversized, ok := lr.next()
+	if !ok {
+		t.Fatal("expected a first line")
+	}
+	if !oversized {
+		t.Fatal("expected the line to be flagged oversized")
+	}
+	if len(line) > maxLineBytes {
+		t.Fatalf("retained %d bytes, want <= %d", len(line), maxLineBytes)
+	}
+	if strings.Contains(string(line), "b") {
+		t.Fatalf("retained bytes include content from the tail of the line — not a genuine prefix (retained %d bytes)", len(line))
+	}
+	if !strings.HasPrefix(head+tail, string(line)) {
+		t.Fatal("retained bytes are not a prefix of the original line")
+	}
+
+	line2, oversized2, ok2 := lr.next()
+	if !ok2 || oversized2 || string(line2) != "short line" {
+		t.Fatalf("next line: got %q oversized=%v ok=%v, want %q", line2, oversized2, ok2, "short line")
+	}
+}

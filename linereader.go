@@ -26,15 +26,17 @@ func newLineReader(r io.Reader, maxLineBytes int) *lineReader {
 }
 
 // next returns the next line (without its trailing newline). oversized is
-// true if the line exceeded maxLineBytes, in which case line holds only the
-// first maxLineBytes bytes and the rest was discarded. ok is false once the
-// input is exhausted; check err() afterward to distinguish clean EOF from a
-// real read failure.
+// true if the line exceeded maxLineBytes, in which case line holds at most
+// maxLineBytes bytes and only a genuine prefix of the line — once the
+// overflow is detected no further bytes are retained, so the returned bytes
+// are never a splice of non-contiguous parts. ok is false once the input is
+// exhausted; check err() afterward to distinguish clean EOF from a real read
+// failure.
 func (lr *lineReader) next() (line []byte, oversized bool, ok bool) {
 	var buf []byte
 	for {
 		chunk, isPrefix, err := lr.br.ReadLine()
-		if len(chunk) > 0 {
+		if len(chunk) > 0 && !oversized {
 			if len(buf)+len(chunk) > lr.max {
 				oversized = true
 			} else {

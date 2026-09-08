@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -141,5 +140,4 @@ func TestParseRecord_NeverPanics(t *testing.T) {
 	for _, w := range weird {
 		_, _ = ParseRecord(w)
 	}
-	_ = errors.New // keep errors imported for future assertions in this file
 }

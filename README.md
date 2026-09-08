@@ -27,11 +27,18 @@ Flags:
 - `-v` / `--verbose`: print a short, structural reason (e.g. `line 42: invalid timestamp`) to stderr for each malformed line. Never prints the raw line content — third-party log data can carry sensitive fields, and the tool avoids duplicating that into a new output stream by default.
 - `--max-line-bytes` (default `1048576`, i.e. 1 MiB): lines larger than this are counted as malformed rather than fully buffered, bounding memory per line regardless of how large an actual (or adversarial) line is.
 
+## Exit codes
+
+- `0` — a report was produced. This includes runs where some (or all) input lines were malformed: malformed lines are counted in `malformed_lines`, not treated as a failure of the run.
+- `1` — a CLI/IO-level failure, reported as a clear one-line message on stderr and never a stack trace: an unrecognized flag, a missing or unreadable file, a directory passed as the input path, or an invalid `--max-line-bytes` (it must be a positive integer). `-h`/`--help` prints usage and exits `0`.
+
 Run the test suite:
 
 ```bash
 go test ./...
 ```
+
+`gofmt -l .` and `go vet ./...` both run clean.
 
 Run the fuzz test for the line parser (native Go fuzzing, no extra tooling):
 
