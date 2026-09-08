@@ -43,7 +43,7 @@ var timestampLayouts = []string{time.RFC3339, time.RFC3339Nano}
 func ParseRecord(line []byte) (Record, error) {
 	var raw rawRecord
 	if err := json.Unmarshal(line, &raw); err != nil {
-		return Record{}, fmt.Errorf("invalid JSON: %w", err)
+		return Record{}, fmt.Errorf("invalid JSON")
 	}
 
 	requestID, err := requiredString(raw.RequestID, "request_id")
@@ -64,7 +64,7 @@ func ParseRecord(line []byte) (Record, error) {
 	}
 	ts, err := parseTimestamp(*raw.Timestamp)
 	if err != nil {
-		return Record{}, fmt.Errorf("invalid timestamp: %w", err)
+		return Record{}, fmt.Errorf("invalid timestamp: does not match RFC3339 (with optional fractional seconds)")
 	}
 
 	statusCode, err := parseStatusCode(raw.StatusCode)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -72,6 +73,32 @@ func TestParseRecord_InvalidTimestamp(t *testing.T) {
 		if _, err := ParseRecord([]byte(c)); err == nil {
 			t.Errorf("expected error for %s", c)
 		}
+	}
+}
+
+func TestParseRecord_ErrorMessagesNeverLeakRawValues(t *testing.T) {
+	// Test that timestamp error messages don't include the raw timestamp value
+	rawTimestamp := "not-a-date"
+	line := []byte(`{"request_id":"a","timestamp":"not-a-date","client_id":"c","endpoint":"/e","status_code":200}`)
+	_, err := ParseRecord(line)
+	if err == nil {
+		t.Fatal("expected error for invalid timestamp")
+	}
+	if strings.Contains(err.Error(), rawTimestamp) {
+		t.Errorf("timestamp error message leaked raw value: %q contains %q", err.Error(), rawTimestamp)
+	}
+	if strings.Contains(err.Error(), "parsing time") {
+		t.Errorf("timestamp error message contains raw time.Parse error: %q", err.Error())
+	}
+
+	// Test that JSON error messages don't leak raw values
+	badJSON := "not json at all"
+	_, err = ParseRecord([]byte(badJSON))
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+	if strings.Contains(err.Error(), badJSON) {
+		t.Errorf("JSON error message leaked raw value: %q contains %q", err.Error(), badJSON)
 	}
 }
 
