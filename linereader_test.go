@@ -71,3 +71,53 @@ func TestLineReader_OversizedLineIsBoundedAndFlagged(t *testing.T) {
 		t.Fatalf("got %q, want %q", line2, "short line")
 	}
 }
+
+func TestLineReader_OversizedLineSpanningMultipleChunks(t *testing.T) {
+	// Create a line larger than the 64KB bufio.Reader buffer to exercise
+	// the multi-chunk continuation path (isPrefix == true loop in next()).
+	// This verifies that when a single line spans multiple ReadLine() calls,
+	// the bounded memory property is maintained and we correctly skip to the next line.
+	const hugeLineSize = 500000 // 500 KB, well beyond 64 KB buffer
+	const maxLineBytes = 1000
+
+	// Build the huge line from a simple repeating pattern
+	pattern := "x"
+	hugeOversizedLine := strings.Repeat(pattern, hugeLineSize)
+
+	// Construct input: oversized line, then a newline, then a normal line
+	input := hugeOversizedLine + "\n" + "short line after huge"
+	lr := newLineReader(strings.NewReader(input), maxLineBytes)
+
+	// Read the oversized line
+	line, oversized, ok := lr.next()
+	if !ok {
+		t.Fatal("expected a first line")
+	}
+	if !oversized {
+		t.Fatal("expected first line to be flagged oversized")
+	}
+	if len(line) > maxLineBytes {
+		t.Fatalf("oversized line retained %d bytes, want <= %d (memory must stay bounded)", len(line), maxLineBytes)
+	}
+
+	// Read the next line to verify the reader correctly recovered after the oversized line.
+	// This is the key test: it confirms that the multi-chunk loop in next() correctly
+	// kept discarding chunks until it found the newline, and then properly reset
+	// to read the subsequent line.
+	line2, oversized2, ok2 := lr.next()
+	if !ok2 {
+		t.Fatal("expected a second line after the oversized one")
+	}
+	if oversized2 {
+		t.Fatal("second line should not be flagged oversized")
+	}
+	want := "short line after huge"
+	if string(line2) != want {
+		t.Fatalf("got %q, want %q", line2, want)
+	}
+
+	// Verify no read errors
+	if err := lr.err(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
