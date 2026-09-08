@@ -70,7 +70,3 @@ func (b *Builder) Build() Report {
 	}
 }
 
-// TODO(task 4): replaced by ratelimit.go's real implementation.
-func DetectRateLimitViolations(byClient map[string][]Record) []RateLimitViolation {
-	return []RateLimitViolation{}
-}
