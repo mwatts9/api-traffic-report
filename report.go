@@ -1,10 +1,13 @@
 package main
 
-// RateLimitViolation is one client's earliest rate-limit violation.
+// RateLimitViolation is one client's earliest rate-limit violation. Field
+// order here is the exact output key order required by the spec
+// (alphabetical, matching the assessment's example): client_id,
+// request_count, timestamp.
 type RateLimitViolation struct {
 	ClientID     string `json:"client_id"`
-	Timestamp    string `json:"timestamp"`
 	RequestCount int    `json:"request_count"`
+	Timestamp    string `json:"timestamp"`
 }
 
 // Report is the final JSON structure printed to stdout. Field order here is

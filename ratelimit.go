@@ -13,19 +13,21 @@ const (
 // DetectRateLimitViolations returns the earliest rate-limit violation for
 // each client that has one, sorted by client_id ascending. For a request at
 // time t, the window is (t-10s, t] — left edge exclusive, right edge
-// (the request itself) inclusive.
+// (the request itself) inclusive. Sorting is stable, so records sharing an
+// identical timestamp keep their first-seen (file) order — the same
+// first-seen-wins philosophy as request_id de-duplication.
 func DetectRateLimitViolations(byClient map[string][]Record) []RateLimitViolation {
 	violations := make([]RateLimitViolation, 0, len(byClient))
 	for clientID, records := range byClient {
 		sorted := append([]Record(nil), records...)
-		sort.Slice(sorted, func(i, j int) bool {
+		sort.SliceStable(sorted, func(i, j int) bool {
 			return sorted[i].Timestamp.Before(sorted[j].Timestamp)
 		})
 		if v, ok := earliestViolation(clientID, sorted); ok {
 			violations = append(violations, v)
 		}
 	}
-	sort.Slice(violations, func(i, j int) bool {
+	sort.SliceStable(violations, func(i, j int) bool {
 		return violations[i].ClientID < violations[j].ClientID
 	})
 	return violations
