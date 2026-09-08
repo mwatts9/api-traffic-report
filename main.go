@@ -19,14 +19,20 @@ func main() {
 		}
 	}()
 
-	verbose := flag.Bool("v", false, "print a short, structural reason per malformed line to stderr (never raw line content)")
-	flag.BoolVar(verbose, "verbose", false, "alias for -v")
-	maxLineBytes := flag.Int("max-line-bytes", defaultMaxLineBytes, "lines larger than this many bytes are treated as malformed")
-	flag.Parse()
+	fs := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	verbose := fs.Bool("v", false, "print a short, structural reason per malformed line to stderr (never raw line content)")
+	fs.BoolVar(verbose, "verbose", false, "alias for -v")
+	maxLineBytes := fs.Int("max-line-bytes", defaultMaxLineBytes, "lines larger than this many bytes are treated as malformed")
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		// fs uses ContinueOnError, so it already printed its own usage/error
+		// message to its output (stderr by default) — just exit, don't
+		// double-print.
+		os.Exit(1)
+	}
 
 	path := "-"
-	if flag.NArg() > 0 {
-		path = flag.Arg(0)
+	if fs.NArg() > 0 {
+		path = fs.Arg(0)
 	}
 
 	var input io.Reader = os.Stdin
