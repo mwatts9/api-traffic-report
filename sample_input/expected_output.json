@@ -1,0 +1,15 @@
+{
+  "malformed_lines": 0,
+  "rate_limit_violations": [
+    {
+      "client_id": "acct_1",
+      "request_count": 6,
+      "timestamp": "2024-01-15T10:00:08Z"
+    }
+  ],
+  "requests_per_endpoint": {
+    "/v1/reports": 2,
+    "/v1/widgets": 6
+  },
+  "total_requests": 8
+}
